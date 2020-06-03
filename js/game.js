@@ -1,93 +1,155 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-const ground = new Image();
-ground.src = "img/ground.png";
-
-const foodImg = new Image();
-foodImg.src = "img/food.png";
-
-let box = 32;
+let input = document.createElement('input');
+document.body.appendChild(input);
+input.style.cssText = `
+    margin: auto;
+    margin-bottom: 40px;
+    font-size: 30px;
+    display: block;
+`;
 
 let score = 0;
+input.value = `Ваши очки: ${score}`;
 
-let food = {
-	x: Math.floor((Math.random() * 17 + 1)) * box,
-	y: Math.floor((Math.random() * 15 + 3)) * box,
-};
 
-let snake = [];
-snake[0] = {
-	x: 9 * box,
-	y: 10 * box
-};
+let flied = document.createElement('div');
+document.body.appendChild(flied);
+flied.classList.add('flied');
 
-document.addEventListener("keydown", direction);
-
-let dir;
-
-function direction(event) {
-	if (event.keyCode == 37 && dir != "right") 
-		dir = "left";
-	else if (event.keyCode == 38 && dir != "down") 
-		dir = "up";
-	else if (event.keyCode == 39 && dir != "left") 
-		dir = "right";
-	else if (event.keyCode == 40 && dir != "up" ) 
-		dir = "down";
+for (let i = 0; i < 100; i++) {
+    let excel = document.createElement('div');
+    flied.appendChild(excel);
+    excel.classList.add('excel');
 }
 
-function eatTail (head, arr) {
-	for (let i = 0; i < arr.length; i++) {
-		if (head.x == arr[i].x && head.y == arr[i].y)
-			clearInterval(game);
-	}
+let excel = document.getElementsByClassName('excel');
+let x = 1,
+    y = 10;
+
+for (let i = 0; i < excel.length; i++) {
+    if (x > 10) {
+        x = 1;
+        y--;
+    }
+    excel[i].setAttribute('posX' , x)
+    excel[i].setAttribute('posY' , y)
+    x++;
 }
 
-function drawGame() {
-	ctx.drawImage(ground, 0, 0);
-
-	ctx.drawImage(foodImg, food.x, food.y);
-
-	for (let i = 0; i < snake.length; i++) {
-		ctx.fillStyle = i == 0 ? "green" : "red";
-		ctx.fillRect(snake[i].x, snake[i].y, box, box);
-	}
-
-	ctx.fillStyle = "white";
-	ctx.font = "50px Arial";
-	ctx.fillText(score, box * 2.5, box * 1.7);
-
-	let snakeX = snake[0].x;
-	let snakeY = snake[0].y;
-
-	if (snakeX == food.x && snakeY == food.y) {
-		score++;
-		food = {
-			x: Math.floor((Math.random() * 17 + 1)) * box,
-			y: Math.floor((Math.random() * 15 + 3)) * box,
-		};
-	} else {
-		snake.pop();
-	}
-
-	if (snakeX < box || snakeX > box * 17
-		|| snakeY < 3 * box || snakeY > box * 17)
-		clearInterval(game);
-
-	if (dir == "left") snakeX -= box;
-	if (dir == "right") snakeX += box;
-	if (dir == "up") snakeY -= box;
-	if (dir == "down") snakeY += box;
-
-	let newHead = {
-		x: snakeX,
-		y: snakeY
-	};
-
-	eatTail(newHead, snake);
-
-	snake.unshift(newHead);
+function generateSnake() {
+    let posX = Math.round(Math.random() * (10 - 3) + 3);
+    let posY = Math.round(Math.random() * (10 - 1) + 1);
+    return [posX, posY];
 }
 
-let game = setInterval(drawGame, 100);
+let coordinates = generateSnake();
+let snakeBody = [document.querySelector('[posX = "' + coordinates[0] + '"][posY = "' + coordinates[1] + '"]'),
+                 document.querySelector('[posX = "' + (coordinates[0] - 1) + '"][posY = "' + coordinates[1] + '"]'),
+                 document.querySelector('[posX = "' + (coordinates[0] - 2) + '"][posY = "' + coordinates[1] + '"]')];
+
+for (let i = 0; i < snakeBody.length; i++) {
+    snakeBody[i].classList.add('snakeBody');
+}
+snakeBody[0].classList.add('snakeHead');
+
+let mouse;
+
+function createMouse() {
+    function generateMouse() {
+        let posX = Math.round(Math.random() * (10 - 3) + 3);
+        let posY = Math.round(Math.random() * (10 - 1) + 1);
+        return [posX, posY];
+    }
+
+    let mouseCoordinates = generateMouse();
+    mouse = [document.querySelector('[posX = "' + mouseCoordinates[0] + '"][posY = "' + mouseCoordinates[1] + '"]')];
+
+    while (mouse[0].classList.contains('snakeBody')) {
+        let mouseCoordinates = generateMouse();
+        mouse = [document.querySelector('[posX = "' + mouseCoordinates[0] + '"][posY = "' + mouseCoordinates[1] + '"]')];
+    }
+
+   //mouse.style.filter(hue-rotate(Math.random() * (360 - 1) + 1));
+
+    mouse[0].classList.add('mouse');
+}
+
+createMouse();
+
+let direction = 'right';
+let steps = false;
+
+function move() {
+    let snakeCoordinates = [snakeBody[0].getAttribute('posX'), snakeBody[0].getAttribute('posY')];
+    snakeBody[0].classList.remove('snakeHead');
+    snakeBody[snakeBody.length - 1].classList.remove('snakeBody');
+    snakeBody.pop();
+    if (direction === "right") {
+        if (snakeCoordinates[0] < 10)
+            snakeBody.unshift(document.querySelector('[posX = "' + (+snakeCoordinates[0] + 1) + '"][posY = "' + snakeCoordinates[1] + '"]'));
+        else
+            snakeBody.unshift(document.querySelector('[posX = "1"][posY = "' + snakeCoordinates[1] + '"]'));
+    }
+    else if (direction === "left") {
+        if (snakeCoordinates[0] > 1)
+            snakeBody.unshift(document.querySelector('[posX = "' + (+snakeCoordinates[0] - 1) + '"][posY = "' + snakeCoordinates[1] + '"]'));
+        else
+            snakeBody.unshift(document.querySelector('[posX = "10"][posY = "' + snakeCoordinates[1] + '"]'));
+    }
+    else if (direction === "up") {
+        if (snakeCoordinates[1] < 10)
+            snakeBody.unshift(document.querySelector('[posX = "' + snakeCoordinates[0] + '"][posY = "' + (+snakeCoordinates[1] + 1) + '"]'));
+        else
+            snakeBody.unshift(document.querySelector('[posX = "' + snakeCoordinates[0] + '"][posY = "1"]'));
+    }
+    else if (direction === "down") {
+        if (snakeCoordinates[1] > 1)
+            snakeBody.unshift(document.querySelector('[posX = "' + snakeCoordinates[0] + '"][posY = "' + (snakeCoordinates[1] - 1) + '"]'));
+        else
+            snakeBody.unshift(document.querySelector('[posX = "' + snakeCoordinates[0] + '"][posY = "10"]'));
+    }
+
+    if (snakeBody[0].getAttribute('posX') === mouse[0].getAttribute('posX') && snakeBody[0].getAttribute('posY') === mouse[0].getAttribute('posY')) {
+        mouse[0].classList.remove('mouse');
+        let a = snakeBody[snakeBody.length - 1].getAttribute('posX');
+        let b = snakeBody[snakeBody.length - 1].getAttribute('posY');
+        snakeBody.push(document.querySelector('[posX = "' + a + '"][posY = "' + b + '"]'));
+        createMouse();
+        score++;
+        input.value = `Ваши очки: ${score}`;
+    }
+
+    if (snakeBody[0].classList.contains('snakeBody')) {
+        alert(`Игра окончена Ваши очки: ${score}`);
+        clearInterval(interval);
+}
+
+    snakeBody[0].classList.add('snakeHead');
+    for (let i = 0; i < snakeBody.length; i++) {
+        snakeBody[i].classList.add('snakeBody');
+    }
+    steps = true;
+
+}
+
+let interval = setInterval(move, 250);
+
+document.addEventListener('keydown', function (e) {
+    if (steps === true) {
+        if (e.keyCode === 37 && direction !== 'right') {
+            direction = 'left';
+            steps = false;
+        }
+        else if (e.keyCode === 38 && direction !== 'down') {
+            direction = 'up';
+            steps = false;
+        }
+        else if (e.keyCode === 39 && direction !== 'left') {
+            direction = 'right';
+            steps = false;
+        }
+        else if (e.keyCode === 40 && direction !== 'up') {
+            direction = 'down';
+            steps = false;
+        }
+    }
+});

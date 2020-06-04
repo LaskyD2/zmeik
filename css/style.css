@@ -22,7 +22,7 @@ body {
 }
 
 .snakeBody {
-    background: forestgreen;
+    background: url("../img/face3.png");;
     background-size: cover;
     border-radius: 50%;
 }
